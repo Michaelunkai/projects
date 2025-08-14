@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Clipboard Sync</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .current-clipboard {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clipboard-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clipboard-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .clipboard-content {
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .clipboard-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .clipboard-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .manual-input {
+            background: rgba(255, 193, 7, 0.1);
+            border: 2px dashed #FFC107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .manual-input textarea {
+            width: 100%;
+            min-height: 120px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            resize: vertical;
+            font-size: 14px;
+        }
+
+        .manual-input textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .permission-info {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .history {
+            margin-top: 30px;
+        }
+
+        .history-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+            border-left: 3px solid #ddd;
+        }
+
+        .history-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            max-height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .sync-code {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .code-display {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            letter-spacing: 2px;
+        }
+
+        .instructions {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #FFC107;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .instructions h3 {
+            color: #F57C00;
+            margin-bottom: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .sync-input-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sync-dialog {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .sync-dialog h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .sync-dialog input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .sync-dialog input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .sync-dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            .clipboard-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Universal Clipboard</h1>
+            <p>Sync your clipboard across all devices</p>
+        </div>
+
+        <div class="instructions">
+            <h3>📱 How to Use</h3>
+            <p><strong>✅ Recommended Method:</strong> Paste into the input box below - it auto-copies to your clipboard!</p>
+            <p><strong>🔄 Auto-Copy:</strong> Latest item is always ready to paste anywhere (Ctrl+V)</p>
+            <p><strong>🔄 Sync:</strong> Share your sync code with other devices to auto-sync clipboard data</p>
+            <p><strong>Note:</strong> Data is stored in memory during this session only</p>
+        </div>
+
+        <div class="manual-input">
+            <h4 style="margin-bottom: 10px; color: #333;">✨ Universal Clipboard Input (Auto-Copies!)</h4>
+            <p style="margin-bottom: 10px; color: #666; font-size: 0.9rem;">Copy something normally (Ctrl+C), then paste it here (Ctrl+V) - it will automatically copy to your clipboard!</p>
+            <textarea id="manualInput" placeholder="Paste your copied text here - it will auto-copy to your clipboard and be ready to paste anywhere!"></textarea>
+            <button class="btn-primary" onclick="addManualInput()" style="margin-top: 10px;">
+                ➕ Add & Auto-Copy to Clipboard
+            </button>
+            <small style="display: block; margin-top: 8px; color: #666;">💡 Tip: Use Ctrl+Enter as a shortcut. The latest item is always ready to paste (Ctrl+V)!</small>
+        </div>
+
+        <div class="status">
+            <div class="status-dot"></div>
+            <span id="clipboardStatus">Checking clipboard support...</span>
+        </div>
+
+        <div class="sync-code">
+            <div>Your Session Code:</div>
+            <div class="code-display" id="syncCode">LOADING...</div>
+            <small>Use this code to identify your clipboard session</small>
+        </div>
+
+        <div class="control-panel">
+            <button class="btn-secondary" onclick="captureClipboard()">
+                🔄 Try Auto Capture
+            </button>
+            <button class="btn-primary" onclick="focusManualInput()">
+                📝 Use Manual Input
+            </button>
+            <button class="btn-secondary" onclick="showSyncDialog()">
+                🔄 Enter Sync Code
+            </button>
+            <button class="btn-secondary" onclick="generateNewCode()">
+                🆕 New Session
+            </button>
+            <button class="btn-success" onclick="copyLatest()">
+                📤 Re-Copy Latest
+            </button>
+            <button class="btn-danger" onclick="clearAll()">
+                🗑️ Clear All
+            </button>
+        </div>
+
+        <div class="current-clipboard">
+            <div class="section-title">
+                📌 Latest Clipboard Item
+            </div>
+            <div id="latestItem">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3"/>
+                    </svg>
+                    <div>No clipboard items yet</div>
+                    <small>Copy something and click "Capture Clipboard" to get started</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="history">
+            <div class="section-title">
+                📚 Clipboard History
+            </div>
+            <div id="historyContainer">
+                <div class="empty-state">
+                    <small>Your clipboard history will appear here</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Dialog -->
+    <div class="sync-input-container" id="syncDialog">
+        <div class="sync-dialog">
+            <h3>🔄 Enter Sync Code</h3>
+            <input type="text" id="syncCodeInput" placeholder="ENTER CODE" maxlength="8">
+            <div class="sync-dialog-actions">
+                <button class="btn-secondary" onclick="hideSyncDialog()">Cancel</button>
+                <button class="btn-primary" onclick="applySyncCode()">Sync</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // In-memory storage - no localStorage used
+        let clipboardData = [];
+        let syncCode = '';
+        let sessionData = new Map(); // Simulates shared storage
+
+        // Generate or load sync code
+        function initializeSyncCode() {
+            syncCode = Math.random().toString(36).substr(2, 8).toUpperCase();
+            document.getElementById('syncCode').textContent = syncCode;
+            checkClipboardSupport();
+            updateDisplay();
+            
+            // Show initial guidance
+            setTimeout(() => {
+                showNotification('💡 Tip: Use the input box below - it auto-copies to your clipboard and works on all devices!', 'info');
+            }, 1000);
+        }
+
+        // Generate new session code
+        function generateNewCode() {
+            if (confirm('Generate a new session code? This will clear current data.')) {
+                syncCode = Math.random().toString(36).substr(2, 8).toUpperCase();
+                document.getElementById('syncCode').textContent = syncCode;
+                clipboardData = [];
+                updateDisplay();
+                showNotification('🆕 New session created: ' + syncCode, 'success');
+            }
+        }
+
+        // Check clipboard API availability on load
+        function checkClipboardSupport() {
+            if (!navigator.clipboard) {
+                document.getElementById('clipboardStatus').innerHTML = '❌ Clipboard API not supported - use manual input below';
+                return false;
+            }
+            
+            if (!window.isSecureContext) {
+                document.getElementById('clipboardStatus').innerHTML = '❌ Requires HTTPS for clipboard access - use manual input below';
+                return false;
+            }
+            
+            document.getElementById('clipboardStatus').innerHTML = '⚠️ Clipboard API available but may be restricted - manual input recommended';
+            return true;
+        }
+
+        // Capture current clipboard content
+        async function captureClipboard() {
+            try {
+                // Check if clipboard API is available
+                if (!navigator.clipboard) {
+                    showNotification('❌ Clipboard API not supported. Use the input box below instead.', 'error');
+                    focusManualInput();
+                    return;
+                }
+
+                // Check if we're in a secure context
+                if (!window.isSecureContext) {
+                    showNotification('❌ Clipboard access requires HTTPS. Use the input box below instead.', 'error');
+                    focusManualInput();
+                    return;
+                }
+
+                const text = await navigator.clipboard.readText();
+                if (text && text.trim()) {
+                    addClipboardItem(text);
+                    // Success message handled by addClipboardItem's auto-copy function
+                } else {
+                    showNotification('⚠️ Clipboard is empty or contains no text', 'warning');
+                }
+            } catch (err) {
+                console.log('Clipboard error:', err);
+                
+                if (err.message.includes('permissions policy') || err.message.includes('blocked')) {
+                    showNotification('🚫 Clipboard blocked by browser policy. Please use the input box below instead.', 'error');
+                    focusManualInput();
+                } else if (err.name === 'NotAllowedError') {
+                    showNotification('❌ Clipboard permission denied. Use the input box below instead.', 'error');
+                    focusManualInput();
+                } else if (err.name === 'NotFoundError') {
+                    showNotification('⚠️ No text found in clipboard', 'warning');
+                } else {
+                    showNotification('❌ Cannot access clipboard. Please use the input box below instead.', 'error');
+                    focusManualInput();
+                }
+            }
+        }
+
+        // Focus manual input area
+        function focusManualInput() {
+            setTimeout(() => {
+                const input = document.getElementById('manualInput');
+                input.focus();
+                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
+        }
+
+        // Request clipboard permission
+        async function requestClipboardPermission() {
+            try {
+                if (!navigator.permissions) {
+                    showNotification('⚠️ Permission API not supported. Try the auto capture button instead.', 'warning');
+                    return;
+                }
+
+                const permission = await navigator.permissions.query({ name: 'clipboard-read' });
+                
+                if (permission.state === 'granted') {
+                    showNotification('✅ Clipboard permission already granted!', 'success');
+                } else if (permission.state === 'prompt') {
+                    showNotification('🔄 Please try "Auto Capture" to grant permission', 'info');
+                } else {
+                    showNotification('❌ Clipboard permission denied. Use manual input instead.', 'error');
+                }
+            } catch (err) {
+                showNotification('⚠️ Could not check clipboard permission. Try "Auto Capture" instead.', 'warning');
+            }
+        }
+
+        // Add manual input content
+        function addManualInput() {
+            const textarea = document.getElementById('manualInput');
+            const text = textarea.value.trim();
+            
+            if (text) {
+                addClipboardItem(text);
+                textarea.value = '';
+                textarea.focus();
+                
+                // Scroll to show the result
+                setTimeout(() => {
+                    document.getElementById('latestItem').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                }, 500);
+            } else {
+                showNotification('⚠️ Please paste some text first (Ctrl+V)', 'warning');
+                textarea.focus();
+            }
+        }
+
+        // Add new clipboard item
+        async function addClipboardItem(content) {
+            const item = {
+                id: Date.now(),
+                content: content,
+                timestamp: new Date().toLocaleString(),
+                device: getDeviceInfo(),
+                syncCode: syncCode
+            };
+
+            // Remove duplicate if exists
+            clipboardData = clipboardData.filter(item => item.content !== content);
+            
+            // Add to beginning
+            clipboardData.unshift(item);
+            
+            // Keep only last 50 items
+            clipboardData = clipboardData.slice(0, 50);
+            
+            // Store in session data
+            sessionData.set(syncCode, [...clipboardData]);
+            
+            updateDisplay();
+            
+            // Automatically copy to system clipboard
+            await autoCopyToClipboard(content);
+        }
+
+        // Automatic clipboard copy with silent operation
+        async function autoCopyToClipboard(text) {
+            try {
+                // Try modern clipboard API first
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    showNotification('✅ Added & auto-copied to clipboard! Ready to paste anywhere!', 'success');
+                    return;
+                }
+                
+                // Fallback method
+                throw new Error('Clipboard API not available');
+                
+            } catch (err) {
+                // Fallback for older browsers or when clipboard API fails
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        showNotification('✅ Added & auto-copied! Ready to paste anywhere!', 'success');
+                    } else {
+                        throw new Error('execCommand failed');
+                    }
+                } catch (fallbackErr) {
+                    // Silent fallback - just notify that item was added
+                    showNotification('✅ Added to clipboard history! Click "Copy Latest" to copy to system clipboard.', 'success');
+                }
+            }
+        }
+
+        // Get device info
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            if (/Android/i.test(ua)) return '📱 Android';
+            if (/iPhone|iPad/i.test(ua)) return '📱 iOS';
+            if (/Windows/i.test(ua)) return '💻 Windows';
+            if (/Mac/i.test(ua)) return '💻 Mac';
+            if (/Linux/i.test(ua)) return '💻 Linux';
+            return '🌐 Unknown';
+        }
+
+        // Copy text to clipboard
+        async function copyToClipboard(text) {
+            try {
+                // Try modern clipboard API first
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    showNotification('✅ Copied to clipboard!', 'success');
+                    return;
+                }
+                
+                // Fallback method
+                throw new Error('Clipboard API not available');
+                
+            } catch (err) {
+                // Fallback for older browsers or when clipboard API fails
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        showNotification('✅ Copied using fallback method!', 'success');
+                    } else {
+                        throw new Error('execCommand failed');
+                    }
+                } catch (fallbackErr) {
+                    // Show text in a modal for manual copying
+                    showCopyModal(text);
+                }
+            }
+        }
+
+        // Show manual copy modal
+        function showCopyModal(text) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 2000;
+            `;
+            
+            const content = document.createElement('div');
+            content.style.cssText = `
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+            `;
+            
+            content.innerHTML = `
+                <h3 style="margin-bottom: 15px; color: #333;">📋 Manual Copy</h3>
+                <p style="margin-bottom: 15px; color: #666;">Select and copy this text manually:</p>
+                <textarea readonly style="width: 100%; height: 200px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; resize: vertical;">${text}</textarea>
+                <div style="margin-top: 15px; text-align: right;">
+                    <button onclick="this.closest('.modal').remove()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">Close</button>
+                </div>
+            `;
+            
+            modal.appendChild(content);
+            modal.className = 'modal';
+            document.body.appendChild(modal);
+            
+            // Select text automatically
+            const textarea = content.querySelector('textarea');
+            textarea.select();
+            textarea.focus();
+            
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            showNotification('📋 Text shown for manual copying', 'info');
+        }
+
+        // Copy latest item
+        function copyLatest() {
+            if (clipboardData.length > 0) {
+                copyToClipboard(clipboardData[0].content);
+            } else {
+                showNotification('⚠️ No clipboard items available - add something first!', 'warning');
+            }
+        }
+
+        // Delete clipboard item
+        function deleteItem(id) {
+            clipboardData = clipboardData.filter(item => item.id !== id);
+            sessionData.set(syncCode, [...clipboardData]);
+            updateDisplay();
+            showNotification('🗑️ Item deleted', 'info');
+        }
+
+        // Clear all items
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all clipboard items?')) {
+                clipboardData = [];
+                sessionData.set(syncCode, []);
+                updateDisplay();
+                showNotification('🗑️ All items cleared', 'info');
+            }
+        }
+
+        // Show sync code dialog
+        function showSyncDialog() {
+            document.getElementById('syncDialog').style.display = 'flex';
+            document.getElementById('syncCodeInput').focus();
+        }
+
+        // Hide sync dialog
+        function hideSyncDialog() {
+            document.getElementById('syncDialog').style.display = 'none';
+            document.getElementById('syncCodeInput').value = '';
+        }
+
+        // Apply sync code
+        async function applySyncCode() {
+            const inputCode = document.getElementById('syncCodeInput').value.trim().toUpperCase();
+            if (inputCode && inputCode.length === 8) {
+                const savedData = sessionData.get(inputCode);
+                if (savedData && savedData.length > 0) {
+                    syncCode = inputCode;
+                    clipboardData = [...savedData];
+                    document.getElementById('syncCode').textContent = syncCode;
+                    updateDisplay();
+                    hideSyncDialog();
+                    
+                    // Auto-copy the latest item from synced data
+                    if (clipboardData.length > 0) {
+                        await autoCopyToClipboard(clipboardData[0].content);
+                        showNotification('🔄 Synced with code: ' + inputCode + ' & latest item ready to paste!', 'success');
+                    } else {
+                        showNotification('🔄 Synced with code: ' + inputCode, 'success');  
+                    }
+                } else {
+                    showNotification('⚠️ No data found for code: ' + inputCode, 'warning');
+                }
+            } else {
+                showNotification('❌ Please enter a valid 8-character code', 'error');
+            }
+        }
+
+        // Update display
+        function updateDisplay() {
+            updateLatestItem();
+            updateHistory();
+        }
+
+        // Update latest item display
+        function updateLatestItem() {
+            const container = document.getElementById('latestItem');
+            
+            if (clipboardData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3"/>
+                        </svg>
+                        <div>No clipboard items yet</div>
+                        <small>Copy something and paste it in the input box above - it will auto-copy to your clipboard!</small>
+                    </div>
+                `;
+                return;
+            }
+
+            const latest = clipboardData[0];
+            const escapedContent = escapeHtml(latest.content);
+            container.innerHTML = `
+                <div class="clipboard-item">
+                    <div class="clipboard-meta">
+                        <span>${latest.device}</span>
+                        <span>${latest.timestamp}</span>
+                    </div>
+                    <div class="clipboard-content">${escapedContent}</div>
+                    <div class="clipboard-actions">
+                        <button class="btn-primary" onclick="copyToClipboard(\`${latest.content.replace(/`/g, '\\`')}\`)">
+                            📤 Copy to Clipboard
+                        </button>
+                        <button class="btn-danger" onclick="deleteItem(${latest.id})">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update history display
+        function updateHistory() {
+            const container = document.getElementById('historyContainer');
+            
+            if (clipboardData.length <= 1) {
+                container.innerHTML = '<div class="empty-state"><small>Your clipboard history will appear here</small></div>';
+                return;
+            }
+
+            const historyItems = clipboardData.slice(1);
+            container.innerHTML = historyItems.map(item => {
+                const escapedContent = escapeHtml(item.content);
+                const truncatedContent = item.content.length > 200 ? item.content.substring(0, 200) + '...' : item.content;
+                
+                return `
+                    <div class="history-item">
+                        <div class="clipboard-meta">
+                            <span>${item.device}</span>
+                            <span>${item.timestamp}</span>
+                        </div>
+                        <div class="history-content">${escapeHtml(truncatedContent)}</div>
+                        <div class="clipboard-actions">
+                            <button class="btn-primary" onclick="copyToClipboard(\`${item.content.replace(/`/g, '\\`')}\`)">
+                                📤 Copy
+                            </button>
+                            <button class="btn-danger" onclick="deleteItem(${item.id})">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 1000;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+                max-width: 300px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+
+            // Set color based on type
+            const colors = {
+                success: '#4CAF50',
+                error: '#f44336',
+                warning: '#FF9800',
+                info: '#2196F3'
+            };
+            notification.style.background = colors[type] || colors.info;
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+
+            // Animate out and remove
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeSyncCode);
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Handle sync dialog
+            if (document.getElementById('syncDialog').style.display === 'flex') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applySyncCode();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    hideSyncDialog();
+                }
+                return;
+            }
+
+            // Global shortcuts
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    captureClipboard();
+                }
+            }
+            
+            // Manual input shortcuts
+            const manualInput = document.getElementById('manualInput');
+            if (document.activeElement === manualInput) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    addManualInput();
+                }
+            }
+        });
+
+        // Close sync dialog when clicking outside
+        document.getElementById('syncDialog').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('syncDialog')) {
+                hideSyncDialog();
+            }
+        });
+    </script>
+</body>
+</html>

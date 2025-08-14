@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeBattle Arena - Elite Coding Competition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .cyber-glow {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            border-bottom: 2px solid #00ffff;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: #000;
+            text-shadow: none;
+        }
+
+        /* Main Container */
+        .main-container {
+            margin-top: 80px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard */
+        .dashboard {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: #00ffff;
+            margin-bottom: 1rem;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        /* Battle Arena */
+        .battle-arena {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .battle-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .battle-title {
+            font-size: 2.5rem;
+            color: #00ffff;
+            margin-bottom: 1rem;
+        }
+
+        .battle-status {
+            font-size: 1.2rem;
+            color: #ff6b6b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .battle-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            height: 70vh;
+        }
+
+        .code-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .problem-statement {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            height: 200px;
+            overflow-y: auto;
+        }
+
+        .editor-container {
+            flex: 1;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .battle-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .opponents {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 0, 255, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .opponent {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        .opponent-status {
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+
+        .status-coding { background: #ffa500; color: #000; }
+        .status-testing { background: #ffff00; color: #000; }
+        .status-completed { background: #00ff00; color: #000; }
+
+        /* Leaderboard */
+        .leaderboard {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .leaderboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .leaderboard-title {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .leaderboard-table {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .table-header {
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: #000;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 80px 1fr 150px 150px 150px;
+            font-weight: bold;
+        }
+
+        .table-row {
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 80px 1fr 150px 150px 150px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.3s;
+        }
+
+        .table-row:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #00ffff;
+        }
+
+        .rank.gold { color: #ffd700; }
+        .rank.silver { color: #c0c0c0; }
+        .rank.bronze { color: #cd7f32; }
+
+        /* Tournaments */
+        .tournaments {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tournaments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .tournament-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .tournament-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 255, 255, 0.3);
+        }
+
+        .tournament-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .tournament-name {
+            font-size: 1.3rem;
+            color: #00ffff;
+        }
+
+        .tournament-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-live {
+            background: #ff4757;
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-upcoming {
+            background: #ffa502;
+            color: #fff;
+        }
+
+        .status-completed {
+            background: #2ed573;
+            color: #fff;
+        }
+
+        /* Achievements */
+        .achievements {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .achievement-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .achievement-card.unlocked {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .achievement-card.locked {
+            opacity: 0.5;
+            filter: grayscale(100%);
+        }
+
+        .achievement-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .achievement-name {
+            font-size: 1.1rem;
+            color: #ffd700;
+            margin-bottom: 0.5rem;
+        }
+
+        .achievement-description {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ffff, #0080ff);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff00ff, #ff4081);
+            color: #fff;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #00ff00, #32cd32);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Language Selector */
+        .language-selector {
+            margin-bottom: 1rem;
+        }
+
+        .language-selector select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #fff;
+            padding: 0.5rem;
+            border-radius: 5px;
+        }
+
+        /* Test Results */
+        .test-results {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .test-case {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            margin: 0.3rem 0;
+            border-radius: 5px;
+        }
+
+        .test-case.passed {
+            background: rgba(0, 255, 0, 0.2);
+            border-left: 3px solid #00ff00;
+        }
+
+        .test-case.failed {
+            background: rgba(255, 0, 0, 0.2);
+            border-left: 3px solid #ff0000;
+        }
+
+        /* Chat */
+        .chat-container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 10px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-input input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 0.5rem;
+            outline: none;
+        }
+
+        .chat-input button {
+            background: #00ffff;
+            color: #000;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .battle-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .table-header, .table-row {
+                grid-template-columns: 60px 1fr 80px;
+            }
+
+            .table-header > *:nth-child(4),
+            .table-header > *:nth-child(5),
+            .table-row > *:nth-child(4),
+            .table-row > *:nth-child(5) {
+                display: none;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ffff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Particles Background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00ffff;
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particles Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo neon-text">⚡ CodeBattle Arena</div>
+            <ul class="nav-links">
+                <li><a href="#" onclick="showView('dashboard')" class="nav-link active">Dashboard</a></li>
+                <li><a href="#" onclick="showView('battle')" class="nav-link">Battle Arena</a></li>
+                <li><a href="#" onclick="showView('leaderboard')" class="nav-link">Leaderboard</a></li>
+                <li><a href="#" onclick="showView('tournaments')" class="nav-link">Tournaments</a></li>
+                <li><a href="#" onclick="showView('achievements')" class="nav-link">Achievements</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Dashboard View -->
+        <div class="view active" id="dashboard">
+            <div class="dashboard">
+                <h1 class="neon-text" style="text-align: center; margin-bottom: 2rem; font-size: 2.5rem;">Welcome to CodeBattle Arena</h1>
+                
+                <div class="dashboard-grid">
+                    <div class="dashboard-card cyber-glow">
+                        <div class="card-title">🏆 Current Rank</div>
+                        <div class="card-value">#1,247</div>
+                        <div style="color: #00ff00; margin-top: 0.5rem;">↗ +23 this week</div>
+                    </div>
+                    <div class="dashboard-card cyber-glow">
+                        <div class="card-title">⚔️ Battles Won</div>
+                        <div class="card-value">156</div>
+                        <div style="color: #00ff00; margin-top: 0.5rem;">Win Rate: 78%</div>
+                    </div>
+                    <div class="dashboard-card cyber-glow">
+                        <div class="card-title">🎯 Problems Solved</div>
+                        <div class="card-value">892</div>
+                        <div style="color: #ffff00; margin-top: 0.5rem;">12 today</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="joinQuickMatch()">🚀 Quick Match</button>
+                    <button class="btn btn-secondary" onclick="createRoom()">🏛️ Create Room</button>
+                    <button class="btn btn-success" onclick="showView('tournaments')">🏆 Join Tournament</button>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h2 style="color: #00ffff; margin-bottom: 1rem;">🔥 Recent Activity</h2>
+                    <div class="dashboard-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span>Defeated @CodeNinja in Binary Search Challenge</span>
+                            <span style="color: #00ff00;">+25 ELO</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span>Completed "Array Manipulation" tournament</span>
+                            <span style="color: #ffd700;">🥈 2nd Place</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Unlocked "Speed Demon" achievement</span>
+                            <span style="color: #ff00ff;">🏆 Achievement</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battle Arena View -->
+        <div class="view" id="battle">
+            <div class="battle-arena">
+                <div class="battle-header">
+                    <h1 class="battle-title neon-text">⚔️ Battle Arena</h1>
+                    <div class="battle-status" id="battleStatus">Waiting for opponents...</div>
+                </div>
+
+                <div class="battle-layout">
+                    <div class="code-section">
+                        <div class="problem-statement">
+                            <h3 style="color: #00ffff; margin-bottom: 1rem;">Problem: Two Sum</h3>
+                            <p style="margin-bottom: 1rem;">
+                                Given an array of integers <code>nums</code> and an integer <code>target</code>, 
+                                return indices of the two numbers such that they add up to target.
+                            </p>
+                            <p style="margin-bottom: 1rem;">
+                                <strong>Example:</strong><br>
+                                Input: nums = [2,7,11,15], target = 9<br>
+                                Output: [0,1]<br>
+                                Explanation: nums[0] + nums[1] = 2 + 7 = 9
+                            </p>
+                            <p><strong>Constraints:</strong> 2 ≤ nums.length ≤ 10⁴</p>
+                        </div>
+
+                        <div class="language-selector">
+                            <select id="languageSelect" onchange="changeLanguage()">
+                                <option value="javascript">JavaScript</option>
+                                <option value="python">Python</option>
+                                <option value="cpp">C++</option>
+                                <option value="java">Java</option>
+                            </select>
+                        </div>
+
+                        <div class="editor-container" id="editorContainer"></div>
+
+                        <div class="controls">
+                            <button class="btn btn-primary" onclick="runCode()">▶️ Run Code</button>
+                            <button class="btn btn-success" onclick="submitCode()">🚀 Submit</button>
+                            <button class="btn btn-secondary" onclick="resetCode()">🔄 Reset</button>
+                        </div>
+
+                        <div class="test-results" id="testResults" style="display: none;">
+                            <h4 style="color: #00ffff; margin-bottom: 1rem;">Test Results</h4>
+                            <div class="test-case passed">
+                                <span>Test Case 1</span>
+                                <span style="color: #00ff00;">✓ PASSED</span>
+                            </div>
+                            <div class="test-case passed">
+                                <span>Test Case 2</span>
+                                <span style="color: #00ff00;">✓ PASSED</span>
+                            </div>
+                            <div class="test-case failed">
+                                <span>Test Case 3</span>
+                                <span style="color: #ff0000;">✗ FAILED</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="battle-sidebar">
+                        <div class="opponents">
+                            <h4 style="color: #ff00ff; margin-bottom: 1rem;">🏁 Live Opponents</h4>
+                            <div class="opponent">
+                                <span>@SpeedCoder</span>
+                                <span class="opponent-status status-testing">Testing</span>
+                            </div>
+                            <div class="opponent">
+                                <span>@AlgoMaster</span>
+                                <span class="opponent-status status-coding">Coding</span>
+                            </div>
+                            <div class="opponent">
+                                <span>@ByteWarrior</span>
+                                <span class="opponent-status status-completed">Completed</span>
+                            </div>
+                        </div>
+
+                        <div class="chat-container">
+                            <div class="chat-messages" id="chatMessages">
+                                <div style="color: #00ffff; margin-bottom: 0.5rem;">
+                                    <strong>@SpeedCoder:</strong> Good luck everyone! 🚀
+                                </div>
+                                <div style="color: #ff00ff; margin-bottom: 0.5rem;">
+                                    <strong>@AlgoMaster:</strong> This looks tricky...
+                                </div>
+                                <div style="color: #ffd700; margin-bottom: 0.5rem;">
+                                    <strong>@ByteWarrior:</strong> Done! 💪
+                                </div>
+                            </div>
+                            <div class="chat-input">
+                                <input type="text" placeholder="Type a message..." id="chatInput" onkeypress="handleChatEnter(event)">
+                                <button onclick="sendMessage()">Send</button>
+                            </div>
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 10px; padding: 1rem;">
+                            <h4 style="color: #00ffff; margin-bottom: 1rem;">⏱️ Battle Timer</h4>
+                            <div style="font-size: 2rem; text-align: center; color: #ff6b6b;" id="battleTimer">14:32</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard View -->
+        <div class="view" id="leaderboard">
+            <div class="leaderboard">
+                <div class="leaderboard-header">
+                    <h1 class="leaderboard-title neon-text">🏆 Global Leaderboard</h1>
+                    <p style="color: #ccc;">Top competitive programmers worldwide</p>
+                </div>
+
+                <div class="leaderboard-table">
+                    <div class="table-header">
+                        <div>Rank</div>
+                        <div>Player</div>
+                        <div>Rating</div>
+                        <div>Battles Won</div>
+                        <div>Win Rate</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="rank gold">🥇 1</div>
+                        <div>🚀 CodeLegend</div>
+                        <div style="color: #ffd700;">3,847</div>
+                        <div>1,234</div>
+                        <div style="color: #00ff00;">94%</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="rank silver">🥈 2</div>
+                        <div>⚡ AlgoGod</div>
+                        <div style="color: #c0c0c0;">3,756</div>
+                        <div>1,089</div>
+                        <div style="color: #00ff00;">92%</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="rank bronze">🥉 3</div>
+                        <div>🎯 BinaryNinja</div>
+                        <div style="color: #cd7f32;">3,689</div>
+                        <div>987</div>
+                        <div style="color: #00ff00;">91%</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="rank">4</div>
+                        <div>🔥 SpeedDemon</div>
+                        <div style="color: #00ffff;">3,542</div>
+                        <div>876</div>
+                        <div style="color: #ffff00;">89%</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="rank">5</div>
+                        <div>💫 QuickSort</div>
+                        <div style="color: #00ffff;">3,401</div>
+                        <div>765</div>
+                        <div style="color: #ffff00;">87%</div>
+                    </div>
+                    <div class="table-row" style="background: rgba(0, 255, 255, 0.1);">
+                        <div class="rank">1,247</div>
+                        <div>🌟 You</div>
+                        <div style="color: #00ffff;">2,156</div>
+                        <div>156</div>
+                        <div style="color: #ffff00;">78%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournaments View -->
+        <div class="view" id="tournaments">
+            <div class="tournaments">
+                <h1 class="neon-text" style="text-align: center; margin-bottom: 2rem; font-size: 2.5rem;">🏆 Elite Tournaments</h1>
+                
+                <div class="tournaments-grid">
+                    <div class="tournament-card">
+                        <div class="tournament-header">
+                            <div class="tournament-name">🔥 Weekly Championship</div>
+                            <div class="tournament-status status-live">LIVE</div>
+                        </div>
+                        <p style="margin-bottom: 1rem; color: #ccc;">
+                            The ultimate weekly coding challenge. 5 problems, 2 hours, winner takes all!
+                        </p>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <span>Prize Pool: <strong style="color: #ffd700;">$5,000</strong></span>
+                            <span>Participants: <strong>1,247</strong></span>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;">⚔️ Join Battle</button>
+                    </div>
+
+                    <div class="tournament-card">
+                        <div class="tournament-header">
+                            <div class="tournament-name">🚀 Speed Coding Sprint</div>
+                            <div class="tournament-status status-upcoming">UPCOMING</div>
+                        </div>
+                        <p style="margin-bottom: 1rem; color: #ccc;">
+                            Fast-paced 30-minute coding sprint. Quick thinking, faster typing!
+                        </p>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <span>Starts in: <strong style="color: #ff6b6b;">2h 15m</strong></span>
+                            <span>Registered: <strong>567</strong></span>
+                        </div>
+                        <button class="btn btn-secondary" style="width: 100%;">📝 Register</button>
+                    </div>
+
+                    <div class="tournament-card">
+                        <div class="tournament-header">
+                            <div class="tournament-name">🎯 Algorithm Masters</div>
+                            <div class="tournament-status status-upcoming">UPCOMING</div>
+                        </div>
+                        <p style="margin-bottom: 1rem; color: #ccc;">
+                            Advanced algorithmic challenges for seasoned programmers.
+                        </p>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <span>Starts: <strong>Tomorrow 18:00</strong></span>
+                            <span>Min Rating: <strong style="color: #ffd700;">2500+</strong></span>
+                        </div>
+                        <button class="btn btn-success" style="width: 100%;">🏆 Register</button>
+                    </div>
+
+                    <div class="tournament-card">
+                        <div class="tournament-header">
+                            <div class="tournament-name">💎 Beginner's Cup</div>
+                            <div class="tournament-status status-completed">COMPLETED</div>
+                        </div>
+                        <p style="margin-bottom: 1rem; color: #ccc;">
+                            Perfect for newcomers to competitive programming.
+                        </p>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <span>Winner: <strong style="color: #ffd700;">@CodeNewbie</strong></span>
+                            <span>Your Rank: <strong style="color: #c0c0c0;">#2</strong></span>
+                        </div>
+                        <button class="btn" style="width: 100%; background: #555; color: #ccc;">📊 View Results</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements View -->
+        <div class="view" id="achievements">
+            <div class="achievements">
+                <h1 class="neon-text" style="text-align: center; margin-bottom: 2rem; font-size: 2.5rem;">🏆 Achievement Gallery</h1>
+                
+                <div class="achievements-grid">
+                    <div class="achievement-card unlocked">
+                        <div class="achievement-icon">🚀</div>
+                        <div class="achievement-name">First Victory</div>
+                        <div class="achievement-description">Win your first coding battle</div>
+                    </div>
+
+                    <div class="achievement-card unlocked">
+                        <div class="achievement-icon">⚡</div>
+                        <div class="achievement-name">Speed Demon</div>
+                        <div class="achievement-description">Solve a problem in under 2 minutes</div>
+                    </div>
+
+                    <div class="achievement-card unlocked">
+                        <div class="achievement-icon">🎯</div>
+                        <div class="achievement-name">Marksman</div>
+                        <div class="achievement-description">Achieve 100% accuracy on 10 problems</div>
+                    </div>
+
+                    <div class="achievement-card unlocked">
+                        <div class="achievement-icon">🔥</div>
+                        <div class="achievement-name">Hot Streak</div>
+                        <div class="achievement-description">Win 10 battles in a row</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">👑</div>
+                        <div class="achievement-name">Code Emperor</div>
+                        <div class="achievement-description">Reach top 100 on global leaderboard</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">🌟</div>
+                        <div class="achievement-name">Tournament Champion</div>
+                        <div class="achievement-description">Win any major tournament</div>
+                    </div>
+
+                    <div class="achievement-card unlocked">
+                        <div class="achievement-icon">🧠</div>
+                        <div class="achievement-name">Problem Solver</div>
+                        <div class="achievement-description">Solve 100 unique problems</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">💎</div>
+                        <div class="achievement-name">Diamond Coder</div>
+                        <div class="achievement-description">Reach 3000+ rating</div>
+                    </div>
+
+                    <div class="achievement-card unlocked">
+                        <div class="achievement-icon">🏃</div>
+                        <div class="achievement-name">Marathon Runner</div>
+                        <div class="achievement-description">Code for 24 hours in a week</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let editor;
+        let currentLanguage = 'javascript';
+        let battleTimer = 15 * 60; // 15 minutes in seconds
+
+        const codeTemplates = {
+            javascript: `function twoSum(nums, target) {
+    // Your solution here
+    
+}`,
+            python: `def two_sum(nums, target):
+    # Your solution here
+    pass`,
+            cpp: `#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        // Your solution here
+        
+    }
+};`,
+            java: `class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        // Your solution here
+        
+    }
+}`
+        };
+
+        // Initialize Monaco Editor
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editorContainer'), {
+                value: codeTemplates[currentLanguage],
+                language: currentLanguage,
+                theme: 'vs-dark',
+                fontSize: 14,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                automaticLayout: true
+            });
+        });
+
+        // Navigation
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Show selected view
+            document.getElementById(viewName).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Language switching
+        function changeLanguage() {
+            const select = document.getElementById('languageSelect');
+            currentLanguage = select.value;
+            
+            if (editor) {
+                monaco.editor.setModelLanguage(editor.getModel(), currentLanguage);
+                editor.setValue(codeTemplates[currentLanguage]);
+            }
+        }
+
+        // Code execution simulation
+        function runCode() {
+            const results = document.getElementById('testResults');
+            results.style.display = 'block';
+            
+            // Simulate test execution
+            setTimeout(() => {
+                // Random test results for demo
+                const testCases = results.querySelectorAll('.test-case');
+                testCases.forEach((testCase, index) => {
+                    testCase.className = 'test-case ' + (Math.random() > 0.3 ? 'passed' : 'failed');
+                    const status = testCase.querySelector('span:last-child');
+                    status.textContent = testCase.classList.contains('passed') ? '✓ PASSED' : '✗ FAILED';
+                    status.style.color = testCase.classList.contains('passed') ? '#00ff00' : '#ff0000';
+                });
+            }, 1000);
+        }
+
+        function submitCode() {
+            runCode();
+            setTimeout(() => {
+                alert('🎉 Code submitted successfully! You finished in 8th place.');
+                updateBattleStatus('Battle completed!');
+            }, 2000);
+        }
+
+        function resetCode() {
+            if (editor) {
+                editor.setValue(codeTemplates[currentLanguage]);
+            }
+            document.getElementById('testResults').style.display = 'none';
+        }
+
+        // Battle functions
+        function joinQuickMatch() {
+            showView('battle');
+            updateBattleStatus('Finding opponents...');
+            setTimeout(() => {
+                updateBattleStatus('Battle starting in 3... 2... 1...');
+                setTimeout(() => {
+                    updateBattleStatus('⚔️ BATTLE IN PROGRESS!');
+                    startBattleTimer();
+                }, 3000);
+            }, 2000);
+        }
+
+        function createRoom() {
+            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            alert(`🏛️ Room created! Share this code with friends: ${roomCode}`);
+        }
+
+        function updateBattleStatus(status) {
+            document.getElementById('battleStatus').textContent = status;
+        }
+
+        function startBattleTimer() {
+            const timerElement = document.getElementById('battleTimer');
+            const interval = setInterval(() => {
+                const minutes = Math.floor(battleTimer / 60);
+                const seconds = battleTimer % 60;
+                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (battleTimer <= 0) {
+                    clearInterval(interval);
+                    updateBattleStatus('⏰ Time\'s up!');
+                    timerElement.textContent = '00:00';
+                    timerElement.style.color = '#ff0000';
+                } else {
+                    battleTimer--;
+                    if (battleTimer <= 60) {
+                        timerElement.style.color = '#ff0000';
+                        timerElement.style.animation = 'pulse 1s infinite';
+                    }
+                }
+            }, 1000);
+        }
+
+        // Chat functions
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const messages = document.getElementById('chatMessages');
+            
+            if (input.value.trim()) {
+                const messageDiv = document.createElement('div');
+                messageDiv.style.color = '#00ffff';
+                messageDiv.style.marginBottom = '0.5rem';
+                messageDiv.innerHTML = `<strong>@You:</strong> ${input.value}`;
+                messages.appendChild(messageDiv);
+                messages.scrollTop = messages.scrollHeight;
+                input.value = '';
+            }
+        }
+
+        function handleChatEnter(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Particles animation
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const colors = ['#00ffff', '#ff00ff', '#ffff00', '#ff6b6b'];
+            
+            setInterval(() => {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.animationDelay = Math.random() * 2 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 20000);
+            }, 500);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            
+            // Simulate live updates
+            setInterval(() => {
+                // Update opponent statuses randomly
+                const statuses = ['coding', 'testing', 'completed'];
+                const statusClasses = ['status-coding', 'status-testing', 'status-completed'];
+                const statusTexts = ['Coding', 'Testing', 'Completed'];
+                
+                document.querySelectorAll('.opponent-status').forEach(status => {
+                    if (Math.random() > 0.8) { // 20% chance to update
+                        const randomIndex = Math.floor(Math.random() * statuses.length);
+                        status.className = 'opponent-status ' + statusClasses[randomIndex];
+                        status.textContent = statusTexts[randomIndex];
+                    }
+                });
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
